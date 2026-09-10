@@ -2,7 +2,7 @@
 // installable app. It caches the core files so the app still opens (with
 // whatever was last loaded) if the phone is briefly offline, then always
 // tries the network first so you get live data when connected.
-const CACHE_NAME = 'brights-shell-v3';
+const CACHE_NAME = 'brights-shell-v5';
 const CORE_FILES = ['./index.html', './style.css', './main.js', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
