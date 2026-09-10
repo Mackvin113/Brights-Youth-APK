@@ -797,13 +797,16 @@ document.getElementById('newPhotoInput').addEventListener('change', (e)=>{
     const img = new Image();
     img.onload = ()=>{
       const canvas = document.createElement('canvas');
-      const size = 160;
+      // Stored at 500x500 (not the old 160x160) so the full-screen photo
+      // viewer has real detail to show — 160px looked fine as a small
+      // circle but turned blurry once zoomed up.
+      const size = 500;
       canvas.width = size; canvas.height = size;
       const ctx = canvas.getContext('2d');
       const scale = Math.max(size/img.width, size/img.height);
       const w = img.width*scale, h = img.height*scale;
       ctx.drawImage(img, (size-w)/2, (size-h)/2, w, h);
-      newPhotoData = canvas.toDataURL('image/jpeg', 0.82);
+      newPhotoData = canvas.toDataURL('image/jpeg', 0.85);
       document.getElementById('newPhotoPreview').src = newPhotoData;
     };
     img.src = ev.target.result;
@@ -1383,6 +1386,33 @@ installBtn.addEventListener('click', async ()=>{
 
 window.addEventListener('appinstalled', ()=>{
   if(installBtn) installBtn.style.display = 'none';
+});
+
+/* ---------- profile photo viewer (WhatsApp-style zoom) ---------- */
+function openPhotoViewer(src, name){
+  const overlay = document.createElement('div');
+  overlay.className = 'photo-viewer-overlay';
+  overlay.innerHTML = `
+    <button type="button" class="photo-viewer-close" aria-label="Close">×</button>
+    <img class="photo-viewer-img" src="${src}" alt="${escapeHtml(name || 'Profile photo')}">
+    ${name ? `<div class="photo-viewer-name">${escapeHtml(name)}</div>` : ''}
+  `;
+  document.body.appendChild(overlay);
+  const close = ()=>{ overlay.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey = (e)=>{ if(e.key === 'Escape') close(); };
+  overlay.querySelector('.photo-viewer-close').addEventListener('click', close);
+  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) close(); });
+  document.addEventListener('keydown', onKey);
+}
+// One delegated listener covers every profile photo everywhere — the members
+// table, the Member directory, search results, the profile popup card, the
+// birthday banner, the upcoming-birthdays popup, and the add/edit form
+// preview — without needing to wire it up separately in each render function.
+document.body.addEventListener('click', (e)=>{
+  const img = e.target.closest('.avatar, .split-avatar, .member-card-avatar, .birthday-avatar, .photo-preview');
+  if(!img || !img.src || img.src.indexOf('data:') !== 0) return;
+  e.stopPropagation();
+  openPhotoViewer(img.src, img.alt);
 });
 
 /* ---------- init ---------- */
